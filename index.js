@@ -29,9 +29,13 @@ request("https://pipeorgandatabase.org/organs/search/quick", function(err, res, 
 
     var $ = cheerio.load(body);
 
-    var numResults = $(".card").length;
+    var allResultsOnPage = $("a[href^='/organ'] > .card");
+    var numResults = allResultsOnPage.length;
 
     console.log(`Got ${numResults} results :)`);
+    var resultText = allResultsOnPage.text();
+
+    console.log(resultText);
   });
 
 });
