@@ -73,7 +73,7 @@ let browser;
       const page = await browser.newPage();
       await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "domcontentloaded"});
       console.log(`Loaded page for ${link}`);
-      var titleElement = page.waitForSelector(".organ-title.text-dark");
+      var titleElement = await page.waitForSelector(".organ-title");
       const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
 
       await page.close();
