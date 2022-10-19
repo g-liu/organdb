@@ -2,7 +2,7 @@
   "name": "organdb",
   "version": "1.0.0",
   "description": "Scraper of pipeorgandatabase.com to get entries to display in a map.",
-  "main": "index.js",
+  "main": "puppeteer-scraper.js",
   "scripts": {
     "test": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec",
     "start": "node ./puppeteer-scraper.js",

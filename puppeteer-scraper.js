@@ -27,12 +27,15 @@ console.log("Scraping the organ database...");
 
   const links = await page.evaluate(resultsSelector => {
     return [...document.querySelectorAll(resultsSelector)].map(result => {
-      return result.textContent;
+      return result.attributes['href'].value;
     })
-  }, "a[href^='/organ'] > .card");
+  }, ".row.grid a[href^='/organ']");
+  
 
   console.log("RESULTS:");
   console.log(links.join("\n"));
+
+  // TODO: Pagination
 
   await browser.close();
 })();
