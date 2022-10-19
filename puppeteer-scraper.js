@@ -52,11 +52,10 @@ let browser;
     await page.waitForSelector("a.page-number")
     
     var pageNumberAnchor = await page.$("a.page-number");
-    var urlString = await page.evaluate(fuck => fuck.href, pageNumberAnchor);
-    console.log(`FOUND URL: ${urlString}`);
+    var urlString = await page.evaluate(el => el.href, pageNumberAnchor);
 
     const restOfPages = [...Array(lastPage-firstPage).keys()].map(x => {
-      var pageNumber = x + 2 // page 1 is explored, so we start on page 2
+      var pageNumber = x + firstPage + 1;
       var url = new URL(`https://pipeorgandatabase.org${urlString}`);
       url.searchParams.set("page", pageNumber);
       return url.toString();
@@ -74,14 +73,11 @@ let browser;
       const page = await browser.newPage();
       await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "domcontentloaded"});
       console.log(`Loaded page for ${link}`);
-      // WHY THE FUCK IS THIS REJECTING????????????????
-      await page.waitForSelector(".organ-title.text-dark");
-      const organTitle = await page.evaluate(sel => {
-        return document.querySelector(sel).textContent;
-      }, ".organ-title.text-dark").trim();
+      var titleElement = page.waitForSelector(".organ-title.text-dark");
+      const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
 
       await page.close();
-      // SOME FUCKING BULLSHIT THIS ISN'T LOGGED
+
       console.log(`Got title ${organTitle}`);
       return organTitle;
     })
