@@ -1,5 +1,6 @@
 const request = require('request');
 const puppeteer = require('puppeteer');
+const config = require('./config.json');
 
 console.log("Scraping the organ database...");
 let browser;
@@ -13,7 +14,7 @@ let browser;
 
   // });
 
-  await page.type("#city", "Seattle"); // TODO: Dynamic option
+  await page.type("#city", config.city);
   await page.waitForSelector("button[type=submit]");
   await page.click("button[type=submit]");
 
@@ -22,6 +23,8 @@ let browser;
   // wait for results...
 
   var links = await getResultsFromPage(page);
+
+  var maxPages = (config.pages < 0 ? Infinity : config.pages);
 
   const [firstPage, lastPage] = await page.evaluate(resultsSelector => {
     const pageNumbers = [...document.querySelectorAll(resultsSelector)].map(e => {
@@ -41,7 +44,7 @@ let browser;
     var pageNumberAnchor = await page.$("a.page-number");
     var urlString = await page.evaluate(el => el.attributes["href"].value, pageNumberAnchor);
 
-    const restOfPages = [...Array(lastPage-firstPage).keys()].map(x => {
+    const restOfPages = [...Array(Math.min(lastPage-firstPage, maxPages)).keys()].map(x => {
       var pageNumber = x + firstPage + 1;
       var url = new URL(`https://pipeorgandatabase.org${urlString}`);
       url.searchParams.set("page", pageNumber);
