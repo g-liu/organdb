@@ -36,6 +36,37 @@ let browser;
   console.log("RESULTS:");
   console.log(links.join("\n"));
 
+  const [firstPage, lastPage] = await page.evaluate(resultsSelector => {
+    const pageNumbers = [...document.querySelectorAll(resultsSelector)].map(e => {
+      return +e.textContent;
+    }).sort((a,b) => {a<b});
+
+    return [pageNumbers.at(0), pageNumbers.at(-1)];
+  }, ".page-number");
+
+  if (firstPage < lastPage) {
+    // then there are multiple pages of results... let's take care of that.
+    console.log(`Found ${lastPage} pages of results`);
+
+    // prepare page urls from firstPage+1...lastPage
+    await page.waitForSelector("a.page-number")
+    var urlString = await page.evaluate(resultsSelector => {
+      document.querySelector(resultsSelector).attributes["href"].value;
+    }, "a.page-number");
+
+    console.log(`FOUND URL: ${urlString}`);
+
+    const restOfPages = [...Array(lastPage-firstPage).keys()].map(x => {
+      var pageNumber = x + 2 // page 1 is explored, so we start on page 2
+      var url = new URL(`https://pipeorgandatabase.org${urlString}`);
+      url.searchParams.set("page", pageNumber);
+      return url.toString();
+    });
+
+    console.log("Will now explore the following pages:");
+    console.log(restOfPages.join("\n"));
+  }
+
   // TODO: Pagination
 
   const namesOfAllOrgans = (await Promise.allSettled(
@@ -48,12 +79,13 @@ let browser;
       }, ".organ-title.text-dark").trim();
 
       await page.close();
+      // SOME FUCKING BULLSHIT THIS ISN'T LOGGED
       console.log(`Got title ${organTitle}`);
       return organTitle;
     })
   ));
 
-  console.log(namesOfAllOrgans);
+  console.log(namesOfAllOrgans.join("\n"));
 
   
 
