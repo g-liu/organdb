@@ -17,24 +17,11 @@ let browser;
   await page.waitForSelector("button[type=submit]");
   await page.click("button[type=submit]");
 
-  console.log("Clicked search")
+  console.log("Clicked search");
 
   // wait for results...
 
-  await page.waitForSelector("#dropdownMenuButton");
-  console.log("Results loaded.");
-
-  // extract results
-
-  const links = await page.evaluate(resultsSelector => {
-    return [...document.querySelectorAll(resultsSelector)].map(result => {
-      return result.attributes['href'].value;
-    })
-  }, ".row.grid a[href^='/organ']");
-  
-
-  console.log("RESULTS:");
-  console.log(links.join("\n"));
+  var links = await getResultsFromPage(page);
 
   const [firstPage, lastPage] = await page.evaluate(resultsSelector => {
     const pageNumbers = [...document.querySelectorAll(resultsSelector)].map(e => {
@@ -52,7 +39,7 @@ let browser;
     await page.waitForSelector("a.page-number")
     
     var pageNumberAnchor = await page.$("a.page-number");
-    var urlString = await page.evaluate(el => el.href, pageNumberAnchor);
+    var urlString = await page.evaluate(el => el.attributes["href"].value, pageNumberAnchor);
 
     const restOfPages = [...Array(lastPage-firstPage).keys()].map(x => {
       var pageNumber = x + firstPage + 1;
@@ -63,9 +50,29 @@ let browser;
 
     console.log("Will add the following pages to explore:");
     console.log(restOfPages.join("\n"));
+
+    // LMAO THIS MAY NOT BE SAFE, mutating `links` in a promise scope
+    (await Promise.allSettled(
+      restOfPages.map(async (link, index) => {
+        console.log(`Opening results page ${index}`);
+        const page = await browser.newPage();
+        await page.goto(link);
+
+        const additionalLinks = await getResultsFromPage(page);
+        links = links.concat(additionalLinks);
+
+        await page.close();
+
+        return Promise.resolve();
+      })
+    ));
   }
 
-  // TODO: Pagination
+  console.log("All the organs:");
+  console.log(links.join("\n"));
+
+  // TODO: FURTHER PROCESSING
+  return;
 
   const namesOfAllOrgans = (await Promise.allSettled(
     links.map(async (link, index) => {
@@ -90,3 +97,20 @@ let browser;
 })()
   .catch(err => console.error(err))
   .finally(() => browser.close());
+
+
+
+async function getResultsFromPage(page) {
+  await page.waitForSelector("#dropdownMenuButton");
+  console.log(`Results loaded for ${page.url()}`);
+
+  // extract results
+
+  const links = await page.evaluate(resultsSelector => {
+    return [...document.querySelectorAll(resultsSelector)].map(result => {
+      return result.attributes['href'].value;
+    })
+  }, ".row.grid a[href^='/organ']");
+
+  return links;
+}
