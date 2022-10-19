@@ -50,10 +50,9 @@ let browser;
 
     // prepare page urls from firstPage+1...lastPage
     await page.waitForSelector("a.page-number")
-    var urlString = await page.evaluate(resultsSelector => {
-      document.querySelector(resultsSelector).attributes["href"].value;
-    }, "a.page-number");
-
+    
+    var pageNumberAnchor = await page.$("a.page-number");
+    var urlString = await page.evaluate(fuck => fuck.href, pageNumberAnchor);
     console.log(`FOUND URL: ${urlString}`);
 
     const restOfPages = [...Array(lastPage-firstPage).keys()].map(x => {
@@ -63,7 +62,7 @@ let browser;
       return url.toString();
     });
 
-    console.log("Will now explore the following pages:");
+    console.log("Will add the following pages to explore:");
     console.log(restOfPages.join("\n"));
   }
 
