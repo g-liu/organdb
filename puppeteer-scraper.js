@@ -74,6 +74,9 @@ let browser;
       console.log(`Opening page for ${link}`);
       const page = await browser.newPage();
       await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "domcontentloaded"});
+      console.log(`Loaded page for ${link}`);
+      // WHY THE FUCK IS THIS REJECTING????????????????
+      await page.waitForSelector(".organ-title.text-dark");
       const organTitle = await page.evaluate(sel => {
         return document.querySelector(sel).textContent;
       }, ".organ-title.text-dark").trim();
@@ -85,7 +88,7 @@ let browser;
     })
   ));
 
-  console.log(namesOfAllOrgans.join("\n"));
+  console.log(JSON.stringify(namesOfAllOrgans));
 
   
 
