@@ -2,8 +2,9 @@ const request = require('request');
 const puppeteer = require('puppeteer');
 
 console.log("Scraping the organ database...");
+let browser;
 (async () => {
-  const browser = await puppeteer.launch();
+  browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   await page.goto("https://pipeorgandatabase.org/organs/search/quick");
@@ -37,5 +38,25 @@ console.log("Scraping the organ database...");
 
   // TODO: Pagination
 
-  await browser.close();
-})();
+  const namesOfAllOrgans = (await Promise.allSettled(
+    links.map(async (link, index) => {
+      console.log(`Opening page for ${link}`);
+      const page = await browser.newPage();
+      await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "domcontentloaded"});
+      const organTitle = await page.evaluate(sel => {
+        return document.querySelector(sel).textContent;
+      }, ".organ-title.text-dark").trim();
+
+      await page.close();
+      console.log(`Got title ${organTitle}`);
+      return organTitle;
+    })
+  ));
+
+  console.log(namesOfAllOrgans);
+
+  
+
+})()
+  .catch(err => console.error(err))
+  .finally(() => browser.close());
