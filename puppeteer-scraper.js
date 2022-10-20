@@ -89,7 +89,12 @@ let browser;
       // const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
 
       // Coordinates are in a comment node
-      var locationText = await page.evaluate(sel => document.querySelector(sel).innerHTML, ".card-text");
+      try {
+        var locationText = await page.evaluate(sel => document.querySelector(sel).innerHTML, ".card-text");
+      } catch(err) {
+        console.error(`AYO HOLD UP COULDN'T FIND THE CARD TEXT? ${err}`);
+      }
+
       var latLongMatches = locationText.match(/\-?\d+\.\d+,\s+\-?\d+\.\d+/);
       if (latLongMatches.length > 0) {
         console.log(`Found location at ${latLongMatches[0]}`);
