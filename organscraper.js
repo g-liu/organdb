@@ -13,7 +13,8 @@ const puppeteer = require('puppeteer');
 const getOrgan = async (browser, id) => {
   console.log(`Opening page for organ #${id}`);
   const page = await browser.newPage();
-  await page.goto(`https://pipeorgandatabase.org/organ/${id}`, {waitUntil: "networkidle0", timeout: 600000 /* 10 min */});
+  const pageUrl = `https://pipeorgandatabase.org/organ/${id}`;
+  await page.goto(pageUrl, {waitUntil: "networkidle0", timeout: 0});
   console.log(`Loaded page for #${id}`);
 
   const organTitle = await getOrganTitle(page);
@@ -21,43 +22,21 @@ const getOrgan = async (browser, id) => {
   const location = await getLocation(page);
   const conditionNotes = await getConditionNotes(page);
 
-  // Coordinates are in a comment node
-  // try {
-  //   var locationHtml = await page.evaluate(sel => document.querySelector(sel).innerHTML, ".card-text");
-  // } catch(err) {
-  //   console.error(`AYO HOLD UP COULDN'T FIND THE CARD TEXT? ${err}`);
-  //   return { lat: 0, lon: 0, name: organTitle, location: null };
-  // }
-
-  // const locationText = await page.evaluate(sel => document.querySelector(sel).textContent, ".card-text");
-  // var latLongMatches = locationHtml.match(/(\-?\d+\.\d+),\s+(\-?\d+\.\d+)/);
-  // if (latLongMatches.length > 0) {
-  //   console.log(`Found location at ${latLongMatches[0]}`);
-  //   await page.close();
-
-  //   const lat = +latLongMatches[1]; const lon = +latLongMatches[2];
-  //   return {lat: lat, lon: lon, name: organTitle, location: locationText};
-  // } else {
-  //   console.log(`No location info found for ${link}`);
-  //   await page.close();
-
-  //   return {lat: 0, lon: 0, name: organTitle, locationText: locationText};
-  // }
-
   return {
     ...organTitle,
     ...latlon,
     ...location,
-    ...conditionNotes
+    ...conditionNotes,
+    pageUrl
   };
 }
 
 async function getOrganTitle(page) {
-  var titleElement = await page.waitForSelector(".organ-title");
+  const titleElement = await page.waitForSelector(".organ-title");
   const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
 
-  var subtitleElement = await page.waitForSelector(".organ-subtitle");
-  var subtitleText = await page.evaluate(el => el.textContent.trim(), subtitleElement);
+  const subtitleElement = await page.$(".organ-subtitle");
+  const subtitleText = await page.evaluate(el => el != null ? el.textContent.trim() : undefined, subtitleElement);
 
   return {title: organTitle, subtitle: subtitleText};
 }
@@ -78,13 +57,10 @@ async function getLatLong(page) {
   const locationText = await page.evaluate(sel => document.querySelector(sel).textContent, ".card-text");
   var latLongMatches = locationHtml.match(/(\-?\d+\.\d+),\s+(\-?\d+\.\d+)/);
   if (latLongMatches.length > 0) {
-    console.log(`Found location at ${latLongMatches[0]}`);
-
     const lat = +latLongMatches[1]; const lon = +latLongMatches[2];
     return {lat: lat, lon: lon};
   } else {
     console.log(`No location info found for ${link}`);
-
     return {lat: 0, lon: 0};
   }
 }

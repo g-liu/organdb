@@ -2,6 +2,7 @@ const request = require('request');
 const puppeteer = require('puppeteer');
 const config = require('./config.json');
 const fs = require('fs');
+const { getOrgan } = require('./organscraper.js');
 
 console.log("Scraping the organ database...");
 let browser;
@@ -11,9 +12,6 @@ let browser;
 
   await page.goto("https://pipeorgandatabase.org/organs/search/quick");
   console.log("Opened the search page.");
-  // request("https://pipeorgandatabase.org/organs/search/quick", function(err, res, body) {
-
-  // });
 
   await page.type("#city", config.city);
   await page.waitForSelector("button[type=submit]");
@@ -75,56 +73,17 @@ let browser;
   console.log("All the organs:");
   console.log(links.join("\n"));
 
-  const locations = await Promise.allSettled(
+  const organs = await Promise.allSettled(
     links.map(async (link, index) => {
-      console.log(`Opening page for ${link}`);
-      const page = await browser.newPage();
-      await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "networkidle0", timeout: 600000 /* 10 min */});
-      console.log(`Loaded page for ${link}`);
-
-      // Example: Getting title
-      var titleElement = await page.waitForSelector(".organ-title");
-      const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
-
-      // Coordinates are in a comment node
-      try {
-        var locationHtml = await page.evaluate(sel => document.querySelector(sel).innerHTML, ".card-text");
-      } catch(err) {
-        console.error(`AYO HOLD UP COULDN'T FIND THE CARD TEXT? ${err}`);
-        return { lat: 0, lon: 0, name: organTitle, location: null };
-      }
-
-      const locationText = await page.evaluate(sel => document.querySelector(sel).textContent, ".card-text");
-      var latLongMatches = locationHtml.match(/(\-?\d+\.\d+),\s+(\-?\d+\.\d+)/);
-      if (latLongMatches.length > 0) {
-        console.log(`Found location at ${latLongMatches[0]}`);
-        await page.close();
-
-        const lat = +latLongMatches[1]; const lon = +latLongMatches[2];
-        return {lat: lat, lon: lon, name: organTitle, location: locationText};
-      } else {
-        console.log(`No location info found for ${link}`);
-        await page.close();
-
-        return {lat: 0, lon: 0, name: organTitle, locationText: locationText};
-      }
+      var organId = link.split("/").at(-1);
+      return await getOrgan(browser, organId);
     })
   ).catch(e => console.error(e));
 
-  console.log(`Found location data for ${locations.length} organ(s)`);
+  console.log(`Found organ data for ${organs.length} organ(s)`);
 
-  /* Format:
-    [OrganLocation]
-
-    OrganLocation {
-      lat: Float
-      lon: Float
-      name: String
-      location: String
-    }
-    */
   const fileName = './webpages/locationdata.json';
-  var fileContents = JSON.stringify(locations.map(promise => promise.value));
+  var fileContents = JSON.stringify(organs.map(promise => promise.value), null, 2);
   try {
     fs.writeFileSync(fileName, fileContents);
     console.log(`Wrote ${fileContents.length} bytes to ${fileName}`);
