@@ -4,8 +4,9 @@
   "description": "Scraper of pipeorgandatabase.com to get entries to display in a map.",
   "main": "puppeteer-scraper.js",
   "scripts": {
-    "test": "istanbul cover node_modules/mocha/bin/_mocha -- -R spec",
-    "start": "node ./puppeteer-scraper.js",
+    "test": "node ./test/organscraper-test.js",
+    "scrape": "node ./puppeteer-scraper.js",
+    "start": "node ./puppeteer-scraper.js && node ./webpage.js",
     "start-old": "node ./index.js",
     "web": "node ./webpage.js"
   },
