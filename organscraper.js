@@ -19,6 +19,7 @@ const getOrgan = async (browser, id) => {
   const organTitle = await getOrganTitle(page);
   const latlon = await getLatLong(page);
   const location = await getLocation(page);
+  const conditionNotes = await getConditionNotes(page);
 
   // Coordinates are in a comment node
   // try {
@@ -46,7 +47,8 @@ const getOrgan = async (browser, id) => {
   return {
     ...organTitle,
     ...latlon,
-    ...location
+    ...location,
+    ...conditionNotes
   };
 }
 
@@ -93,8 +95,21 @@ async function getLatLong(page) {
  * @returns {location} where location is a string
  */
 async function getLocation(page) {
-  const locationText = await page.evaluate(sel => document.querySelector(sel).textContent, ".card-text");
+  var locationText = await page.evaluate(sel => document.querySelector(sel).textContent, ".card-text");
+  locationText = locationText.split("\n").map(text => text.trim()).filter(text => text.length > 0).join("\n");
   return {location: locationText};
+}
+
+async function getConditionNotes(page) {
+  var conditionHeader = await page.$x("//h4[contains(text(), 'Condition')]");
+  if (conditionHeader.length == 0) { return null; }
+
+  conditionList = await page.evaluate(el => {
+    const lists = el.parentElement.querySelectorAll("ul li")
+    return Array.from(lists).map(li => li.textContent.trim());
+  }, conditionHeader[0]);
+
+  return {conditionNotes: conditionList};
 }
 
 module.exports = { getOrgan };
