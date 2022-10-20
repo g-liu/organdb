@@ -74,14 +74,11 @@ let browser;
   console.log("All the organs:");
   console.log(links.join("\n"));
 
-  // TODO: FURTHER PROCESSING
-  // return;
-
   const locations = await Promise.allSettled(
     links.map(async (link, index) => {
       console.log(`Opening page for ${link}`);
       const page = await browser.newPage();
-      await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "networkidle0", timeout: 300000 /* 5 min */});
+      await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "networkidle0", timeout: 600000 /* 10 min */});
       console.log(`Loaded page for ${link}`);
 
       // Example: Getting title
@@ -93,6 +90,7 @@ let browser;
         var locationText = await page.evaluate(sel => document.querySelector(sel).innerHTML, ".card-text");
       } catch(err) {
         console.error(`AYO HOLD UP COULDN'T FIND THE CARD TEXT? ${err}`);
+        return "???";
       }
 
       var latLongMatches = locationText.match(/\-?\d+\.\d+,\s+\-?\d+\.\d+/);
@@ -108,14 +106,13 @@ let browser;
     })
   ).catch(e => console.error(e));
 
-  console.log(JSON.stringify(locations.map(loc => loc.value)));
-
-  
-
+  console.log(locations.map(loc => loc.value).join("\n"));
 })()
   .catch(err => console.error(err))
   .finally(() => browser.close());
 
+
+// TODO: PLOT THE POINTS ON A MAP!!!
 
 
 async function getResultsFromPage(page) {
