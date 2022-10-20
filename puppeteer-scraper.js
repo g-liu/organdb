@@ -75,25 +75,35 @@ let browser;
   console.log(links.join("\n"));
 
   // TODO: FURTHER PROCESSING
-  return;
+  // return;
 
-  const namesOfAllOrgans = (await Promise.allSettled(
+  const locations = await Promise.allSettled(
     links.map(async (link, index) => {
       console.log(`Opening page for ${link}`);
       const page = await browser.newPage();
-      await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "domcontentloaded"});
+      await page.goto(`https://pipeorgandatabase.org${link}`, {waitUntil: "networkidle0", timeout: 300000 /* 5 min */});
       console.log(`Loaded page for ${link}`);
-      var titleElement = await page.waitForSelector(".organ-title");
-      const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
 
-      await page.close();
+      // Example: Getting title
+      // var titleElement = await page.waitForSelector(".organ-title");
+      // const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
 
-      console.log(`Got title ${organTitle}`);
-      return organTitle;
+      // Coordinates are in a comment node
+      var locationText = await page.evaluate(sel => document.querySelector(sel).innerHTML, ".card-text");
+      var latLongMatches = locationText.match(/\-?\d+\.\d+,\s+\-?\d+\.\d+/);
+      if (latLongMatches.length > 0) {
+        console.log(`Found location at ${latLongMatches[0]}`);
+        await page.close();
+        return latLongMatches[0];
+      } else {
+        console.log(`No location info found for ${link}`);
+        await page.close();
+        return await page.evaluate(sel => document.querySelector(sel).textContent, ".card-text");
+      }
     })
-  ));
+  ).catch(e => console.error(e));
 
-  console.log(JSON.stringify(namesOfAllOrgans));
+  console.log(JSON.stringify(locations.map(loc => loc.value)));
 
   
 
