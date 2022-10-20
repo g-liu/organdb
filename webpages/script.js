@@ -1,23 +1,29 @@
-var map = new OpenLayers.Map("mapdiv");
-map.addLayer(new OpenLayers.Layer.OSM());
+// const locationdata = require('./locationdata.json');
 
-var lonLat = new OpenLayers.LonLat( -0.1279688 ,51.5077286 )
-      .transform(
-        new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
-        map.getProjectionObject() // to Spherical Mercator Projection
-      );
-var fuck = new OpenLayers.LonLat( - 0.12, 51.5 )
-      .transform(
-        new OpenLayers.Projection("EPSG:4326"),
-        map.getProjectionObject()
-      );
-      
-var zoom=16;
+(async () => {
+  var map = new OpenLayers.Map("mapdiv");
+  map.addLayer(new OpenLayers.Layer.OSM());
 
-var markers = new OpenLayers.Layer.Markers( "Markers" );
-map.addLayer(markers);
+  // TODO: READ FROM LOCATION DATA
+  var startingLoc = new OpenLayers.LonLat( 47.5 ,-122.1 )
+        .transform(
+          new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+          map.getProjectionObject() // to Spherical Mercator Projection
+        );
 
-markers.addMarker(new OpenLayers.Marker(lonLat));
-markers.addMarker(new OpenLayers.Marker(fuck));
+  var zoom=3;
 
-map.setCenter (lonLat, zoom);
+  var markers = new OpenLayers.Layer.Markers( "Markers" );
+  map.addLayer(markers);
+
+  locationdata = await (await fetch('./locationdata.json')).json();
+  locationdata.forEach(element => {
+    if (element == null || element == undefined) { return; }
+    var lonLat = new OpenLayers.LonLat(element.lat, element.lon)
+      .transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
+    
+    markers.addMarker(new OpenLayers.Marker(lonLat)); // TODO: Title, location?
+  });
+
+  map.setCenter(startingLoc, zoom);
+})();

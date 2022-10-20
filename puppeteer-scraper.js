@@ -1,6 +1,7 @@
 const request = require('request');
 const puppeteer = require('puppeteer');
 const config = require('./config.json');
+const fs = require('fs');
 
 console.log("Scraping the organ database...");
 let browser;
@@ -82,37 +83,59 @@ let browser;
       console.log(`Loaded page for ${link}`);
 
       // Example: Getting title
-      // var titleElement = await page.waitForSelector(".organ-title");
-      // const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
+      var titleElement = await page.waitForSelector(".organ-title");
+      const organTitle = await page.evaluate(el => el.textContent.trim(), titleElement);
 
       // Coordinates are in a comment node
       try {
-        var locationText = await page.evaluate(sel => document.querySelector(sel).innerHTML, ".card-text");
+        var locationHtml = await page.evaluate(sel => document.querySelector(sel).innerHTML, ".card-text");
       } catch(err) {
         console.error(`AYO HOLD UP COULDN'T FIND THE CARD TEXT? ${err}`);
-        return "???";
+        return { lat: 0, lon: 0, name: organTitle, location: null };
       }
 
-      var latLongMatches = locationText.match(/\-?\d+\.\d+,\s+\-?\d+\.\d+/);
+      const locationText = await page.evaluate(sel => document.querySelector(sel).textContent, ".card-text");
+      var latLongMatches = locationHtml.match(/(\-?\d+\.\d+),\s+(\-?\d+\.\d+)/);
       if (latLongMatches.length > 0) {
         console.log(`Found location at ${latLongMatches[0]}`);
         await page.close();
-        return latLongMatches[0];
+
+        const lat = +latLongMatches[1]; const lon = +latLongMatches[2];
+        return {lat: lat, lon: lon, name: organTitle, location: locationText};
       } else {
         console.log(`No location info found for ${link}`);
         await page.close();
-        return await page.evaluate(sel => document.querySelector(sel).textContent, ".card-text");
+
+        return {lat: 0, lon: 0, name: organTitle, locationText: locationText};
       }
     })
   ).catch(e => console.error(e));
 
-  console.log(locations.map(loc => loc.value).join("\n"));
+  console.log(`Found location data for ${locations.length} organ(s)`);
+
+  /* Format:
+    [OrganLocation]
+
+    OrganLocation {
+      lat: Float
+      lon: Float
+      name: String
+      location: String
+    }
+    */
+  const fileName = './webpages/locationdata.json';
+  var fileContents = JSON.stringify(locations.map(promise => promise.value));
+  try {
+    fs.writeFileSync(fileName, fileContents);
+    console.log(`Wrote ${fileContents.length} bytes to ${fileName}`);
+  } catch (err) {
+    console.error(`Error writing to ${fileName}`);
+    console.error(err);
+  }
+
 })()
   .catch(err => console.error(err))
   .finally(() => browser.close());
-
-
-// TODO: PLOT THE POINTS ON A MAP!!!
 
 
 async function getResultsFromPage(page) {
