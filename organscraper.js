@@ -21,12 +21,16 @@ const getOrgan = async (browser, id) => {
   const latlon = await getLatLong(page);
   const location = await getLocation(page);
   const conditionNotes = await getConditionNotes(page);
-
+  const lastUpdate = await getLastUpdate(page);
+  const stoplistLink = await getStoplistLink(page);
+  
   return {
     ...organTitle,
     ...latlon,
     ...location,
     ...conditionNotes,
+    ...lastUpdate,
+    ...stoplistLink,
     pageUrl
   };
 }
@@ -81,11 +85,33 @@ async function getConditionNotes(page) {
   if (conditionHeader.length == 0) { return null; }
 
   conditionList = await page.evaluate(el => {
-    const lists = el.parentElement.querySelectorAll("ul li")
+    const lists = el.parentElement.querySelectorAll("ul li");
     return Array.from(lists).map(li => li.textContent.trim());
   }, conditionHeader[0]);
 
   return {conditionNotes: conditionList};
+}
+
+async function getLastUpdate(page) {
+  var conditionHeader = await page.$x("//h4[contains(text(), 'Condition')]");
+  if (conditionHeader.length == 0) { return null; }
+
+  var lastUpdate = await page.evaluate(el => {
+    const updateTexts = el.parentElement.querySelectorAll("small");
+    if (updateTexts.length == 0) { return null; }
+
+    return updateTexts[0].textContent.split("\n").at(-1).trim();
+  }, conditionHeader[0]);
+
+  return {lastUpdate};
+}
+
+async function getStoplistLink(page) {
+  var stoplistAnchor = await page.$("#accordion-stoplists a[href^='/stoplist']");
+  if (stoplistAnchor == null) { return null; }
+
+  var href = await page.evaluate(el => el.attributes["href"].value, stoplistAnchor);
+  return {stoplistLink: `https://pipeorgandatabase.org${href}`};
 }
 
 module.exports = { getOrgan };
