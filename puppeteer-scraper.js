@@ -8,8 +8,9 @@ console.log("Scraping the organ database...");
 let browser;
 (async () => {
   browser = await puppeteer.launch();
-  performSearch(browser);
+  var page = await performSearch(browser);
 
+  page.screenshot({path: './searchpage.png'});
   var links = await getResultsFromPage(page);
 
   var maxPages = (config.pages < 0 ? Infinity : config.pages);
@@ -87,8 +88,11 @@ let browser;
 
 
 async function getResultsFromPage(page) {
-  await page.waitForSelector("#dropdownMenuButton");
+  await page.waitForSelector("#dropdownMenuButton", {timeout: 0});
   console.log(`Results loaded for ${page.url()}`);
+
+  const expectedResults = page.$(".page-title .text-secondary").textContent;
+  console.log(`Expecting ${expectedResults}`);
 
   // extract results
 

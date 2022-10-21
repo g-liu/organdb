@@ -36,8 +36,10 @@ const performSearch = async (browser) => {
 
   // TODO: Other options
 
-  await page.waitForSelector("button[type='submit']");
+  await page.waitForSelector("button[type='submit']", {timeout: 1000});
   await page.click("button[type='submit']");
+
+  console.log("Search button clicked");
 
   return page;
 };
