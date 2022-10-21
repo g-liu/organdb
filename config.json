@@ -1,4 +1,7 @@
 {
-  "city": "Seattle",
+  "searchtype": "power",
+  "zip": 98101,
+  "zipMaxRadius": 200,
+  "city": null,
   "pages": -1
 }

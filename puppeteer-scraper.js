@@ -1,25 +1,14 @@
-const request = require('request');
 const puppeteer = require('puppeteer');
 const config = require('./config.json');
 const fs = require('fs');
+const { performSearch } = require('./organ-search.js');
 const { getOrgan } = require('./organscraper.js');
 
 console.log("Scraping the organ database...");
 let browser;
 (async () => {
   browser = await puppeteer.launch();
-  const page = await browser.newPage();
-
-  await page.goto("https://pipeorgandatabase.org/organs/search/quick");
-  console.log("Opened the search page.");
-
-  await page.type("#city", config.city);
-  await page.waitForSelector("button[type=submit]");
-  await page.click("button[type=submit]");
-
-  console.log("Clicked search");
-
-  // wait for results...
+  performSearch(browser);
 
   var links = await getResultsFromPage(page);
 
