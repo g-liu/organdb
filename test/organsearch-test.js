@@ -7,7 +7,8 @@ let browser;
   console.log("Starting test...");
   var page = await performSearch(browser);
 
-  await page.screenshot({path: `searchresultspage.png`});
+  await page.waitForSelector("div.card-body"); // Legit? IDK!
+  await page.screenshot({path: `searchresultspage.png`, fullPage: true, captureBeyondViewport: true});
 
   console.log("Search is completed. See screenshots");
   page.close();

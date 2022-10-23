@@ -1,7 +1,9 @@
 {
+  "debug": true,
   "searchtype": "power",
-  "zip": 98101,
-  "zipMaxRadius": 200,
+  "state": "Washington",
+  "zip": null,
+  "zipMaxRadius": null,
   "city": null,
   "pages": -1
 }

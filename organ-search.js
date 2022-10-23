@@ -24,6 +24,12 @@ const performSearch = async (browser) => {
     await page.type("#city", config.city);
   }
 
+  if (config.state) {
+    await page.click("#stateContainer .dropdown-toggle");
+    await page.type("#stateContainer .dropdown-menu input[type='search']", config.state);
+    await page.click("#stateContainer .dropdown-menu a.dropdown-item");
+  }
+
   if (config.zip) {
     await page.type("#zipcode", `${config.zip}`);
   }

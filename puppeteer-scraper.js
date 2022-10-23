@@ -7,10 +7,18 @@ const { getOrgan } = require('./organscraper.js');
 console.log("Scraping the organ database...");
 let browser;
 (async () => {
-  browser = await puppeteer.launch();
+  browser = await puppeteer.launch({headless: !config.debug, defaultViewport: null});
   var page = await performSearch(browser);
+  
+  // try {
+  //   await page.waitForNetworkIdle({idleTime: 500, timeout: 30000}); // NOT WORKING?
+  // } catch (e) {
+  //   console.error("Wait failed");
+  //   console.error(e);
 
-  page.screenshot({path: './searchpage.png'});
+  //   page.screenshot({path: './searchpage.png', fullPage: true, captureBeyondViewport: true});
+  // }
+
   var links = await getResultsFromPage(page);
 
   var maxPages = (config.pages < 0 ? Infinity : config.pages);
@@ -46,7 +54,7 @@ let browser;
     // LMAO THIS MAY NOT BE SAFE, mutating `links` in a promise scope
     (await Promise.allSettled(
       restOfPages.map(async (link, index) => {
-        console.log(`Opening results page ${index}`);
+        console.log(`Opening results page ${index+2}`);
         const page = await browser.newPage();
         await page.goto(link);
 
@@ -91,16 +99,30 @@ async function getResultsFromPage(page) {
   await page.waitForSelector("#dropdownMenuButton", {timeout: 0});
   console.log(`Results loaded for ${page.url()}`);
 
-  const expectedResults = page.$(".page-title .text-secondary").textContent;
+  const expectedResults = await page.waitForSelector(".page-title .text-secondary").textContent;
   console.log(`Expecting ${expectedResults}`);
 
+  // TODO: Y THIS NO WORK
+  // const alertDiv = page.$("div[role='alert']");
+  // if (alertDiv != null) {
+  //   console.error("Uh oh... page says:");
+  //   console.error(alertDiv.textContent);
+  //   // TODO: Abort?
+  // }
+
   // extract results
+
+  // WHY DOES PAGE.$$ NEVER WORK!!!!!!!!!!!!!!!!!!!!!
+  var expectedOnPage = await page.$$(".row.grid a[href^='/organ']").length;
+  console.log(`Expecting ${expectedOnPage} results on page.`);
 
   const links = await page.evaluate(resultsSelector => {
     return [...document.querySelectorAll(resultsSelector)].map(result => {
       return result.attributes['href'].value;
     })
   }, ".row.grid a[href^='/organ']");
+
+  console.log(`Processed ${links.length} results on page.`);
 
   return links;
 }
